@@ -63,7 +63,6 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
         }
         //Store distances in the first slot of T_1D
         for (int i = 0; i < a; i++){
-            //This line needs fixing. It crashes when running for pids that don't start with 0.
             T_1D[a * (pid-p_left) + i] = t[i];
         }
         
@@ -96,10 +95,7 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
         printf("T_1D array:\n");
         printPoint(T_1D, a*nProc);
         printf("\n\n");
-    }
-    
-    //MPI_Waitall(nProc, &mpireq, &mpistat);
-    
+    }    
 
     //Calculate median distance and send it to all processes
     double medDist;
@@ -151,10 +147,6 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
         printPoint(arr, a*nProc);
         printf("\n");
     }
-    
-    
-
-
     
     free(T_1D);
     
