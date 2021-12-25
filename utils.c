@@ -71,9 +71,11 @@ int partition(double *a, int left, int right, int pIndex){
 }
  
 //Returns the k-th smallest element in the list within left…right
-double quickselect(double *nums, int left, int right, int k){
+//Also modifies index variable so that it stores the index where k-th smallest is found
+double quickselect(double *nums, int left, int right, int k, int* index){
     // If the array contains only one element, return that element
     if (left == right) {
+        *index = left - 1;
         return nums[left];
     }
  
@@ -84,17 +86,18 @@ double quickselect(double *nums, int left, int right, int k){
  
     //The pivot is in its final sorted position
     if (k == pIndex) {
+        *index = k - 1;
         return nums[k];
     }
  
     //If k is less than the pivot index
     else if (k < pIndex) {
-        return quickselect(nums, left, pIndex - 1, k);
+        return quickselect(nums, left, pIndex - 1, k, index);
     }
  
     //If k is more than the pivot index
     else {
-        return quickselect(nums, pIndex + 1, right, k);
+        return quickselect(nums, pIndex + 1, right, k, index);
     }
 }
 
