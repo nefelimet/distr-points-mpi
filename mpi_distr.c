@@ -102,7 +102,14 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
     int medDistIndex;
     
     if (pid == head){
-        medDist = quickselect(T_1D, 0, a*nProc-1, a*nProc/2, &medDistIndex);
+        
+        //We create a copy of T_1D, because our quickselect algorithm modifies its input.
+        double *T_1D_copy = (double*)malloc(a*nProc * sizeof(double));
+        for (int i = 0; i < a*nProc; i++){
+            T_1D_copy[i] = T_1D[i];
+        }
+        
+        medDist = quickselect(T_1D_copy, 0, a*nProc-1, a*nProc/2, &medDistIndex);
         //printf("medDist calculated: %.2f at index %d in process %d\n", medDist, medDistIndex, medDistIndex/a);
         for (int t = p_left + 1; t <= p_right; t++){
             MPI_Send(&medDist, 1, MPI_DOUBLE, t, 45, MPI_COMM_WORLD);
@@ -114,6 +121,8 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
             MPI_Send(&medDistIndex, 1, MPI_DOUBLE, t, 46, MPI_COMM_WORLD);
             //printf("pid %d sent medDist index %d to pid %d\n", pid, medDistIndex, t);
         }
+        
+        free(T_1D_copy);
     }
     else if (pid > p_left && pid <= p_right){
         MPI_Recv(&medDist, 1, MPI_DOUBLE, head, 45, MPI_COMM_WORLD, &mpistat);
@@ -126,12 +135,12 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
     //Find in which process medDist belongs
     int medDistProc = medDistIndex / a;
     
-    //Swap medDistIndex with a*nProc/2 (so that medDist gets put in the middle)
+    //Swap medDistIndex with a*nProc/2-1 (so that medDist gets put in the middle)
     double send_buf, recv_buf;
     
     //In case that the median distance is already in the middle, don't do anything
     if (medDistProc != nProc/2-1){
-        //Else swap medDistIndex with a*nProc/2
+        //Else swap medDistIndex with a*nProc/2-1
         if(pid == medDistProc){
             send_buf = arr[medDistIndex];
             arr[a*nProc/2-1] = arr[medDistIndex];
@@ -150,12 +159,60 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
         }
     }
     
-    
-    
-    printf("pid %d arr after swap: ", pid);
+    /*
+    printf("arr in pid %d after swap: ", pid);
     printPoint(arr, a*nProc);
     printf("\n");
+    */
     
+    //Now iterate through all elements in T_1D and spot the wrong ones.
+    //The wrong ones are those that are larger than medDist and at the left part
+    //as well as those that are smaller than medDist and at the right part.
+    
+    //First we count how many wrongs there are left and right of medDistIndex
+    if (pid == head){
+        int wrongs_left = 0;
+        int wrongs_right = 0;
+        for (int i = 0; i < a*nProc/2; i++){
+            if (T_1D[i] > medDist){
+                wrongs_left++;
+            }
+        }
+        for(int i = a*nProc/2; i < a*nProc; i++){
+            if (T_1D[i] < medDist){
+                wrongs_right++;
+            }
+        }
+        printf("wrongs left: %d, wrongs right: %d\n", wrongs_left, wrongs_right);
+    
+        //Then we create two arrays: wrong_left and wrong_right
+        int *wrong_left = (int *)malloc(wrongs_left * sizeof(int));
+        int *wrong_right = (int *)malloc(wrongs_right * sizeof(int));
+        
+        //We fill wrong_left and wrong_right with all wrong elements
+        int left_added = 0;
+        int right_added = 0;
+        for (int i = 0; i < a*nProc/2; i++){
+            if (T_1D[i] > medDist){
+                wrong_left[left_added] = i;
+                left_added++;
+            }
+        }
+        for (int i = a*nProc/2; i < a*nProc; i++){
+            if (T_1D[i] < medDist){
+                wrong_right[right_added] = i;
+                right_added++;
+            }
+        }
+        printf("wrong left: ");
+        printIntPoint(wrong_left, wrongs_left);
+        printf("\nwrong right: ");
+        printIntPoint(wrong_right, wrongs_right);
+        printf("\n");
+    }
+    printf("pid %d has T_1D: ", pid);
+    printPoint(T_1D, a*nProc);
+    printf("\n");
     
     free(T_1D);
     
