@@ -129,22 +129,24 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
     //Swap medDistIndex with a*nProc/2 (so that medDist gets put in the middle)
     double send_buf, recv_buf;
     
-    if (medDistProc != nProc/2){
+    //In case that the median distance is already in the middle, don't do anything
+    if (medDistProc != nProc/2-1){
+        //Else swap medDistIndex with a*nProc/2
         if(pid == medDistProc){
             send_buf = arr[medDistIndex];
-            arr[a * nProc / 2] = arr[medDistIndex];
-            MPI_Send(&send_buf, 1, MPI_DOUBLE, nProc/2, 75, MPI_COMM_WORLD);
-            MPI_Recv(&recv_buf, 1, MPI_DOUBLE, nProc/2, 85, MPI_COMM_WORLD, &mpistat);
+            arr[a*nProc/2-1] = arr[medDistIndex];
+            MPI_Send(&send_buf, 1, MPI_DOUBLE, nProc/2-1, 75, MPI_COMM_WORLD);
+            MPI_Recv(&recv_buf, 1, MPI_DOUBLE, nProc/2-1, 85, MPI_COMM_WORLD, &mpistat);
             arr[medDistIndex] = recv_buf;
-            printf("pid %d swapped %d with %d\n", pid, medDistIndex, a * nProc/2);
+            printf("pid %d swapped %d with %d\n", pid, medDistIndex, a*nProc/2-1);
         }
-        else if (pid == nProc/2){
-            arr[medDistIndex] = arr[a * nProc / 2];
+        else if (pid == nProc/2-1){
+            arr[medDistIndex] = arr[a*nProc/2-1];
             MPI_Recv(&send_buf, 1, MPI_DOUBLE, medDistProc, 75, MPI_COMM_WORLD, &mpistat);
-            recv_buf = arr[a * nProc / 2];
-            arr[a * nProc / 2] = send_buf;
+            recv_buf = arr[a*nProc/2-1];
+            arr[a*nProc/2-1] = send_buf;
             MPI_Send(&recv_buf, 1, MPI_DOUBLE, medDistProc, 85, MPI_COMM_WORLD);
-            printf("pid %d swapped %d with %d\n", pid, medDistIndex, a * nProc/2);
+            printf("pid %d swapped %d with %d\n", pid, medDistIndex, a*nProc/2-1);
         }
     }
     
