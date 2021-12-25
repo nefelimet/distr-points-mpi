@@ -7,7 +7,7 @@ SRCS = main.c mpi_distr.c read_bin.c utils.c
 SRC = a.out
 NPROC = 4
 N = 16
-D = 3
+D = 4
 
 default: $(SRC)
 	@echo $(SRC) has been compiled.
