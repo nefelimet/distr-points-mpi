@@ -13,6 +13,15 @@ void printPoint(double *a, int d){
     printf(")");
 }
 
+//Prints a point (vector) a of size d, for type int
+void printIntPoint(int *a, int d){
+    printf("( ");
+    for (int i = 0; i < d; i++){
+        printf("%d ", a[i]);
+    }
+    printf(")");
+}
+
 //Fills a point (vector) a of dize d with random elements
 void createPoint(double *a, int d){
     time_t t;
