@@ -2,6 +2,7 @@
 #define UTILS_H
 
 void printPoint(double *a, int d);
+void printIntPoint(int *a, int d);
 void createPoint(double *a, int d);
 double calculateDistance(double *a, double *b, int d);
 void swap(double *a, double *b);
