@@ -209,8 +209,6 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
         printf("\nwrong right: ");
         printIntPoint(wrong_right, wrongs_right);
         printf("\n");
-        
-        //Now we know the corresponding pairs that need to exchange between them.
     }
     /*
     printf("pid %d has T_1D: ", pid);
@@ -218,9 +216,11 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
     printf("\n");
     */
     
+    //For corresponding pairs in wrong_left and wrong_right, execute swaps
+    
     free(T_1D);
     
 }
 
-void distributeAll(double ***X, int N, int p, int d){
+void distributeAll(double ***X, int N, int p, int d, int p_left, int p_right){    
 }
