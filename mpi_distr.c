@@ -97,56 +97,63 @@ void distributeByMedian(int pid, int numTasks, MPI_Status mpistat, MPI_Request m
         printf("\n\n");
     }    
 
-    //Calculate median distance and send it to all processes
+    //Calculate median distance and its index and send to all processes
     double medDist;
+    int medDistIndex;
+    
     if (pid == head){
-        medDist = quickselect(T_1D, 0, a*nProc-1, a*nProc/2);
-        //printf("medDist: %.2f\n", medDist);
+        medDist = quickselect(T_1D, 0, a*nProc-1, a*nProc/2, &medDistIndex);
+        //printf("medDist calculated: %.2f at index %d in process %d\n", medDist, medDistIndex, medDistIndex/a);
         for (int t = p_left + 1; t <= p_right; t++){
             MPI_Send(&medDist, 1, MPI_DOUBLE, t, 45, MPI_COMM_WORLD);
             //printf("pid %d sent distance %.2f to pid %d\n", pid, medDist, t);
+        }
+        
+        //Send medDistIndex to all processes
+        for (int t = p_left + 1; t <= p_right; t++){
+            MPI_Send(&medDistIndex, 1, MPI_DOUBLE, t, 46, MPI_COMM_WORLD);
+            //printf("pid %d sent medDist index %d to pid %d\n", pid, medDistIndex, t);
         }
     }
     else if (pid > p_left && pid <= p_right){
         MPI_Recv(&medDist, 1, MPI_DOUBLE, head, 45, MPI_COMM_WORLD, &mpistat);
         //printf("pid %d received distance %.2f\n", pid, medDist);
+        MPI_Recv(&medDistIndex, 1, MPI_DOUBLE, head, 46, MPI_COMM_WORLD, &mpistat);
+        //printf("pid %d received distance index %d\n", pid, medDistIndex);
     }
     
     
-    //Swap medDist with a*nProc/2 (so that medDist gets put in the middle)
+    //Find in which process medDist belongs
+    int medDistProc = medDistIndex / a;
+    
+    //Swap medDistIndex with a*nProc/2 (so that medDist gets put in the middle)
     double send_buf, recv_buf;
     
-    if(pid == head){
-        send_buf = arr[pid];
-        arr[a * nProc / 2 - 1] = arr[pid];
-        MPI_Send(&send_buf, 1, MPI_DOUBLE, nProc/2 - 1, 75, MPI_COMM_WORLD);
-        MPI_Recv(&recv_buf, 1, MPI_DOUBLE, nProc/2 - 1, 85, MPI_COMM_WORLD, &mpistat);
-        arr[pid] = recv_buf;
-    }
-    else if (pid == nProc/2-1){
-        arr[head] = arr[a * nProc / 2-1];
-        MPI_Recv(&send_buf, 1, MPI_DOUBLE, head, 75, MPI_COMM_WORLD, &mpistat);
-        recv_buf = arr[a * nProc / 2-1];
-        arr[a * nProc / 2-1] = send_buf;
-        MPI_Send(&recv_buf, 1, MPI_DOUBLE, head, 85, MPI_COMM_WORLD);
-         
+    if (medDistProc != nProc/2){
+        if(pid == medDistProc){
+            send_buf = arr[medDistIndex];
+            arr[a * nProc / 2] = arr[medDistIndex];
+            MPI_Send(&send_buf, 1, MPI_DOUBLE, nProc/2, 75, MPI_COMM_WORLD);
+            MPI_Recv(&recv_buf, 1, MPI_DOUBLE, nProc/2, 85, MPI_COMM_WORLD, &mpistat);
+            arr[medDistIndex] = recv_buf;
+            printf("pid %d swapped %d with %d\n", pid, medDistIndex, a * nProc/2);
+        }
+        else if (pid == nProc/2){
+            arr[medDistIndex] = arr[a * nProc / 2];
+            MPI_Recv(&send_buf, 1, MPI_DOUBLE, medDistProc, 75, MPI_COMM_WORLD, &mpistat);
+            recv_buf = arr[a * nProc / 2];
+            arr[a * nProc / 2] = send_buf;
+            MPI_Send(&recv_buf, 1, MPI_DOUBLE, medDistProc, 85, MPI_COMM_WORLD);
+            printf("pid %d swapped %d with %d\n", pid, medDistIndex, a * nProc/2);
+        }
     }
     
-    if(pid == head){
-        printf("pid head arr after swap: ");
-        printPoint(arr, a*nProc);
-        printf("\n");
-    }
-    if (pid == nProc/2-1){
-        printf("pid middle arr after swap: ");
-        printPoint(arr, a*nProc);
-        printf("\n");
-    }
-    if (pid == 3){
-        printf("pid last arr after swap: ");
-        printPoint(arr, a*nProc);
-        printf("\n");
-    }
+    
+    
+    printf("pid %d arr after swap: ", pid);
+    printPoint(arr, a*nProc);
+    printf("\n");
+    
     
     free(T_1D);
     
