@@ -97,7 +97,7 @@ int main(int argc, char** argv){
     //printPoint(arr, a*p);
     //printf("\n");
     
-    distributeByMedian(pid, numTasks, mpistat, mpireq, 0, 3, X, N, p, d, arr);
+    distributeByMedian(pid, numTasks, mpistat, mpireq, 0, p-1, X, N, p, d, arr);
     
     MPI_Finalize();    
     
